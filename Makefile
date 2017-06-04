@@ -8,13 +8,14 @@ TESTS_OUT := $(TESTS_PY:tests/%.py=out/%.out)
 TESTS_C := $(TESTS_OUT:out/%.out=out/%.c)
 TESTS_O := $(TESTS_OUT:out/%.out=out/%.o)
 TESTS_EXE := $(TESTS_OUT:out/%.out=out/%.exe)
+TESTS_OK := $(TESTS_OUT:out/%.out=out/%.ok)
 
 $(shell mkdir -p out)
 
-all: $(TESTS_EXE)
+all: $(TESTS_OK)
 
 $(TESTS_OUT): out/%.out: tests/%.py runtest.py
-	$(PYTHON) runtest.py output $*
+	$(PYTHON) runtest.py output $* > $@.tmp && mv $@.tmp $@
 
 $(TESTS_C): out/%.c: out/%.out $(TF2C_PY)
 	$(PYTHON) tf2c.py --graph out/$*.pbtxt --model out/$*.ckpt-0 --outputs result > $@.tmp && mv $@.tmp $@
@@ -30,6 +31,9 @@ out/tf2c.o: lib/tf2c.cc
 
 $(TESTS_EXE): out/%.exe: out/%.o out/main.o out/tf2c.o
 	$(CXX) $(CXXFLAGS) $^ -o $@
+
+$(TESTS_OK): out/%.ok: out/%.exe
+	$(PYTHON) runtest.py test $* && touch $@
 
 clean:
 	rm -f out/*

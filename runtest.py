@@ -6,16 +6,22 @@ from __future__ import print_function
 
 import importlib
 import os
+import subprocess
 import sys
 
 import tensorflow as tf
+from tensorflow.core.framework import tensor_pb2
 from tensorflow.python.framework import tensor_util
 
 
-def save_tensor(output, value):
-    pb = tensor_util.make_tensor_proto(value)
-    with open(output, 'w') as f:
-        f.write(pb.SerializeToString())
+def dump_tensor(value):
+    print(value.shape)
+    print(list(value.flatten()))
+
+def undump_tensor(input):
+    lines = input.splitlines()
+    assert len(lines) == 2
+    return map(eval, lines)
 
 mode = sys.argv[1]
 name = sys.argv[2]
@@ -26,4 +32,16 @@ if mode == 'output':
 
     sess = tf.Session()
     result = sess.run(op)
-    save_tensor('out/%s.out' % name, result)
+    dump_tensor(result)
+
+elif mode == 'test':
+    with open('out/%s.out' % name) as f:
+        expected = undump_tensor(f.read())
+    output = subprocess.check_output(['out/%s.exe' % name])
+    actual = undump_tensor(output)
+    if expected != actual:
+        sys.stderr.write('expected %s but %s' % (expected, actual))
+        sys.exit(1)
+
+else:
+    raise RuntimeError('Unknown mode: %s' % mode)

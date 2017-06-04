@@ -50,13 +50,13 @@ Tensor* tf2c_tensor(Type type, Shape shape) {
 }
 
 void dump_shape(const Shape& shape) {
-  printf("[");
+  printf("(");
   for (uint i = 0; i < shape.num_dims; i++) {
     if (i)
       printf(", ");
     printf("%d", shape.dims[i]);
   }
-  printf("]\n");
+  printf(")\n");
 }
 
 void dump_tensor(const Tensor& tensor) {
