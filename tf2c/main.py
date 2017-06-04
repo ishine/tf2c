@@ -5,6 +5,7 @@ from __future__ import print_function
 import argparse
 import sys
 
+from tf2c import compiler
 from tf2c import graph
 
 def main():
@@ -15,3 +16,5 @@ def main():
     args = parser.parse_args()
 
     g = graph.Graph(args.graph, args.outputs.split(','))
+    c = compiler.Compiler()
+    c.compile(g)
