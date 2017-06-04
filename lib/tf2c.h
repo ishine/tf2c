@@ -91,3 +91,5 @@ Tensor* tf2c_add(const Tensor* a, const Tensor* b) {
   }
   return r;
 }
+
+void init();
