@@ -63,6 +63,16 @@ class Compiler(object):
             self._emit_shape(ce, node)
             ce.emit_line('g_%s = tf2c_tensor(%s, shape);' %
                          (name, node.dtype.upper()))
+            value = node.value
+            assert value.size
+            if value.size == 1:
+                ce.emit_line('tf2c_fill(g_%s, %s);' %
+                             (name, str(value.value[0])))
+            else:
+                ce.emit_line('static const %s v[] = {' % node.dtype)
+                ce.emit_line(', '.join(map(str, value.value)))
+                ce.emit_line('};')
+                ce.emit_line('tf2c_assign(g_%s, v);' % name)
             ce.emit_line('}')
 
     def compile(self, g):

@@ -49,6 +49,7 @@ class Node(object):
         self._node_def = node_def
         self._inputs = []
         self._outputs = []
+        self._value = None
 
     def __str__(self):
         return str(self._node_def)
@@ -85,7 +86,9 @@ class Node(object):
 
     @property
     def value(self):
-        return Tensor(self.attr('value').tensor)
+        if self._value is None:
+            self._value = Tensor(self.attr('value').tensor)
+        return self._value
 
 
 class Graph(object):
