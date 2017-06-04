@@ -44,8 +44,25 @@ elif mode == 'test':
         expected = undump_tensor(f.read())
     output = subprocess.check_output(['out/%s.exe' % name])
     actual = undump_tensor(output)
-    if expected != actual:
-        sys.stderr.write('expected %s but %s' % (expected, actual))
+    if expected == actual:
+        sys.exit(0)
+
+    if expected[0] != actual[0]:
+        sys.stderr.write('expected shape %s but %s\n' %
+                         (expected[0], actual[0]))
+        sys.exit(1)
+
+    expected = expected[1]
+    actual = actual[1]
+    ok = True
+    for i in range(len(expected)):
+        e = expected[i]
+        a = actual[i]
+        if abs(e - a) > 1e-3:
+            sys.stderr.write('expected %f but %f at %d\n' % (e, a, i))
+            ok = False
+
+    if not ok:
         sys.exit(1)
 
 else:
