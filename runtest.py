@@ -8,6 +8,7 @@ import importlib
 import os
 import subprocess
 import sys
+import time
 
 import tensorflow as tf
 from tensorflow.core.framework import tensor_pb2
@@ -20,7 +21,7 @@ def dump_tensor(value):
 
 def undump_tensor(input):
     lines = input.splitlines()
-    assert len(lines) == 2
+    assert len(lines) == 3
     return map(eval, lines)
 
 mode = sys.argv[1]
@@ -36,8 +37,11 @@ if mode == 'output':
         saver = tf.train.Saver(tf.trainable_variables())
         saver.save(sess, 'out/%s.ckpt' % name)
 
+    start = time.time()
     result = sess.run(op)
+    elapsed = time.time() - start
     dump_tensor(result)
+    print(elapsed)
 
 elif mode == 'test':
     with open('out/%s.out' % name) as f:
