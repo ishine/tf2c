@@ -33,9 +33,17 @@ struct Tensor {
   T& mat(int y, int x) {
     return static_cast<T*>(buf)[y * shape.dims[1] + x];
   }
+
+  template<class T>
+  const T& mat(int y, int x) const {
+    return static_cast<T*>(buf)[y * shape.dims[1] + x];
+  }
 };
 
 Shape tf2c_shape(const int* dims);
+Shape tf2c_shape0();
+Shape tf2c_shape1(int d0);
+Shape tf2c_shape2(int d0, int d1);
 
 Tensor* tf2c_tensor(Type type, Shape shape);
 
@@ -54,5 +62,8 @@ Tensor* tf2c_identity(const Tensor* a) { return (Tensor*)a; }
 
 template <class T>
 Tensor* tf2c_add(const Tensor* a, const Tensor* b);
+
+template <class T>
+Tensor* tf2c_matmul(const Tensor* a, const Tensor* b);
 
 void init();

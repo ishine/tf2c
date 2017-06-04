@@ -18,6 +18,7 @@ for op in [
         ('variable', 0, False),
         ('identity', 1, True),
         ('add', 2, True),
+        ('matmul', 2, True),
 ]:
     OP_MAP[op[0]] = OpType(*op)
 
@@ -40,7 +41,7 @@ class Compiler(object):
                 ce.emit_line('Tensor* a%d = %s();' %
                              (i, node.inputs[i].ident))
                 args.append('a%d' % i)
-            ce.emit_line('return tf2c_%s<float>(%s);' %
+            ce.emit_line('return tf2c_%s<void>(%s);' %
                          (op.name, ','.join(args)))
             ce.emit_line('}')
             return
