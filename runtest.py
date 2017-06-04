@@ -31,6 +31,11 @@ if mode == 'output':
     tf.train.write_graph(op.graph.as_graph_def(), 'out', name + '.pbtxt')
 
     sess = tf.Session()
+    if hasattr(module, 'gen_model'):
+        module.gen_model(sess)
+        saver = tf.train.Saver(tf.trainable_variables())
+        saver.save(sess, 'out/%s.ckpt' % name)
+
     result = sess.run(op)
     dump_tensor(result)
 

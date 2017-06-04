@@ -50,6 +50,9 @@ template <class T>
 void tf2c_assign(Tensor* tensor, const T* v);
 
 template <class T>
+Tensor* tf2c_identity(const Tensor* a) { return (Tensor*)a; }
+
+template <class T>
 Tensor* tf2c_add(const Tensor* a, const Tensor* b);
 
 void init();

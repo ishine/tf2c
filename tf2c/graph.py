@@ -19,12 +19,20 @@ def get_dtype_str(dt):
         raise RuntimeError('Unsupported type: %s' % dt)
 
 
+class Shape(object):
+    def __init__(self, shape_def):
+        self.dims = [d.size for d in shape_def.dim]
+        self.size = reduce(lambda a, b: a * b, self.dims)
+
+    def dims_str(self):
+        return ', '.join(map(str, self.dims) + ['-1'])
+
+
 class Tensor(object):
     def __init__(self, tensor_def):
         self._tensor_def = tensor_def
         self.dtype = get_dtype_str(tensor_def.dtype)
-        self.dims = [d.size for d in tensor_def.tensor_shape.dim]
-        self.size = reduce(lambda a, b: a * b, self.dims)
+        self.shape = Shape(tensor_def.tensor_shape)
         if tensor_def.int_val:
             self.value = tensor_def.int_val
         elif tensor_def.float_val:
@@ -32,16 +40,13 @@ class Tensor(object):
         elif tensor_def.string_val:
             self.value = tensor_def.string_val
         elif tensor_def.tensor_content:
-            self.value = struct.unpack('i' * self.size,
+            self.value = struct.unpack('i' * self.shape.size,
                                        tensor_def.tensor_content)
         else:
             raise RuntimeError('Unsupported tensor value: %s' % tensor_def)
 
     def __str__(self):
         return str(self._tensor_def)
-
-    def dims_str(self):
-        return ', '.join(map(str, self.dims) + ['-1'])
 
 
 class Node(object):
@@ -50,6 +55,9 @@ class Node(object):
         self._inputs = []
         self._outputs = []
         self._value = None
+
+        if self.hasattr('shape'):
+            self.shape = Shape(self.attr('shape').shape)
 
     def __str__(self):
         return str(self._node_def)
@@ -73,6 +81,9 @@ class Node(object):
     @property
     def outputs(self):
         return self._outputs
+
+    def hasattr(self, key):
+        return key in self._node_def.attr
 
     def attr(self, key):
         for k, v in self._node_def.attr.iteritems():

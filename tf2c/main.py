@@ -11,10 +11,10 @@ from tf2c import graph
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--graph', required=True)
-    parser.add_argument('--model', required=True)
+    parser.add_argument('--model', required=False)
     parser.add_argument('--outputs', required=True)
     args = parser.parse_args()
 
     g = graph.Graph(args.graph, args.outputs.split(','))
-    c = compiler.Compiler()
+    c = compiler.Compiler(model=args.model)
     c.compile(g)

@@ -18,7 +18,7 @@ $(TESTS_OUT): out/%.out: tests/%.py runtest.py
 	$(PYTHON) runtest.py output $* > $@.tmp && mv $@.tmp $@
 
 $(TESTS_C): out/%.c: out/%.out $(TF2C_PY)
-	$(PYTHON) tf2c.py --graph out/$*.pbtxt --model out/$*.ckpt-0 --outputs result > $@.tmp && mv $@.tmp $@
+	$(PYTHON) tf2c.py --graph out/$*.pbtxt --model out/$*.ckpt --outputs result > $@.tmp && mv $@.tmp $@
 
 $(TESTS_O): out/%.o: out/%.c
 	$(CXX) -c $(CXXFLAGS) $< -o $@

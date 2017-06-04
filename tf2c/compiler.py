@@ -3,6 +3,7 @@ from __future__ import division
 from __future__ import print_function
 
 import collections
+import tensorflow as tf
 
 from tf2c import emitter
 
@@ -14,14 +15,17 @@ OpType = collections.namedtuple('OpType', [
 OP_MAP = {}
 for op in [
         ('const', 0, False),
+        ('variable', 0, False),
+        ('identity', 1, True),
         ('add', 2, True),
 ]:
     OP_MAP[op[0]] = OpType(*op)
 
 
 class Compiler(object):
-    def __init__(self):
+    def __init__(self, model=None):
         self._ce = emitter.CodeEmitter()
+        self._model = model
 
     def _compile_node(self, node):
         ce = self._ce
@@ -41,16 +45,15 @@ class Compiler(object):
             ce.emit_line('}')
             return
 
-        if op.name == 'const':
+        if op.name == 'const' or op.name == 'variable':
             ce.emit_line('Tensor* g_%s;' % name)
             ce.emit_line('Tensor* %s() {' % name)
             ce.emit_line('return g_%s;' % name)
             ce.emit_line('}')
 
-    def _emit_shape(self, ce, node, var_name='shape'):
-        tensor = node.value
+    def _emit_shape(self, ce, shape, var_name='shape'):
         ce.emit_line('static const int %s_dims[] = {%s};' %
-                     (var_name, tensor.dims_str()))
+                     (var_name, shape.dims_str()))
         ce.emit_line('const Shape %s = tf2c_shape(%s_dims);' %
                      (var_name, var_name))
 
@@ -58,14 +61,15 @@ class Compiler(object):
         ce = self._ce
         op = OP_MAP[node.op.lower()]
         name = node.ident
+
         if op.name == 'const':
             ce.emit_line('{')
-            self._emit_shape(ce, node)
+            value = node.value
+            self._emit_shape(ce, value.shape)
             ce.emit_line('g_%s = tf2c_tensor(%s, shape);' %
                          (name, node.dtype.upper()))
-            value = node.value
-            assert value.size
-            if value.size == 1:
+            assert value.shape.size
+            if value.shape.size == 1:
                 ce.emit_line('tf2c_fill(g_%s, %s);' %
                              (name, str(value.value[0])))
             else:
@@ -73,6 +77,21 @@ class Compiler(object):
                 ce.emit_line(', '.join(map(str, value.value)))
                 ce.emit_line('};')
                 ce.emit_line('tf2c_assign(g_%s, v);' % name)
+            ce.emit_line('}')
+
+        elif op.name == 'variable':
+            ce.emit_line('{')
+            self._emit_shape(ce, node.shape)
+            ce.emit_line('g_%s = tf2c_tensor(%s, shape);' %
+                         (name, node.dtype.upper()))
+
+            assert self._model
+            reader = tf.train.NewCheckpointReader(self._model)
+            values = reader.get_tensor(node.name).flatten()
+            ce.emit_line('static const %s v[] = {' % node.dtype)
+            ce.emit_line(', '.join(map(str, values)))
+            ce.emit_line('};')
+            ce.emit_line('tf2c_assign(g_%s, v);' % name)
             ce.emit_line('}')
 
     def compile(self, g):
