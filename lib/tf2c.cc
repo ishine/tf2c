@@ -74,7 +74,9 @@ Tensor* tf2c_tensor(Type type, Shape shape) {
   Tensor* tensor = (Tensor*)malloc(sizeof(Tensor));
   tensor->type = type;
   tensor->shape = shape;
-  tensor->buf = malloc(tensor->shape.size);
+  uint size = 4;
+  assert(type == INT || type == FLOAT);
+  tensor->buf = malloc(tensor->shape.size * size);
   return tensor;
 }
 
