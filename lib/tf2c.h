@@ -18,6 +18,7 @@ struct Tensor {
   Shape shape;
   Type type;
   void* buf;
+  void* alloc;
 
   template<class T>
   T& vec(int x) {

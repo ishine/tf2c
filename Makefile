@@ -1,5 +1,5 @@
 PYTHON := python
-CXXFLAGS := -std=c++11 -g -W -Wall -MMD -MP -O3 -I.
+CXXFLAGS := -std=c++11 -g -W -Wall -MMD -MP -O3 -I. -mavx2 -mfma
 
 TF2C_PY := tf2c.py $(wildcard tf2c/*.py)
 

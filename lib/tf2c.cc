@@ -1,7 +1,12 @@
 #include <assert.h>
 #include <stdarg.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#ifdef __AVX2__
+#include <immintrin.h>
+#endif
 
 #include "tf2c.h"
 
@@ -74,9 +79,10 @@ Tensor* tf2c_tensor(Type type, Shape shape) {
   Tensor* tensor = (Tensor*)malloc(sizeof(Tensor));
   tensor->type = type;
   tensor->shape = shape;
-  uint size = 4;
   assert(type == INT || type == FLOAT);
-  tensor->buf = malloc(tensor->shape.size * size);
+  uint size = tensor->shape.size * 4;
+  tensor->alloc = malloc(size + 63);
+  tensor->buf = (void*)(((uintptr_t)tensor->alloc + 63) & ~63);
   return tensor;
 }
 
@@ -157,6 +163,25 @@ Tensor* tf2c_add(const Tensor* a, const Tensor* b) {
 
 INSTANTIATE2(Tensor*, tf2c_add, (const Tensor* a, const Tensor* b));
 
+#ifdef __AVX2__
+static void tf2c_matmul_avx2(const Tensor* a, const Tensor* b, Tensor* r) {
+  int in = a->shape.dims[0];
+  int jn = a->shape.dims[1];
+  int kn = b->shape.dims[1];
+  for (int i = 0; i < in; i++) {
+    for (int j = 0; j < jn; j++) {
+      __m256 av = _mm256_broadcast_ss(&a->mat<float>(i, j));
+      for (int k = 0; k < kn; k += 8) {
+        __m256 rv = _mm256_loadu_ps(&r->mat<float>(i, k));
+        __m256 bv = _mm256_loadu_ps(&b->mat<float>(j, k));
+        rv = _mm256_fmadd_ps(av, bv, rv);
+        _mm256_storeu_ps(&r->mat<float>(i, k), rv);
+      }
+    }
+  }
+}
+#endif
+
 template <class T>
 Tensor* tf2c_matmul(const Tensor* a, const Tensor* b) {
   if (a->shape.num_dims == 1) {
@@ -182,6 +207,12 @@ Tensor* tf2c_matmul(const Tensor* a, const Tensor* b) {
     int kn = b->shape.dims[1];
     Tensor* tensor = tf2c_tensor(a->type, tf2c_shape2(in, kn));
     tf2c_fill<float>(tensor, 0.0);
+#ifdef __AVX2__
+    if (a->type == FLOAT && in % 32 == 0) {
+      tf2c_matmul_avx2(a, b, tensor);
+      return tensor;
+    }
+#endif
     for (int i = 0; i < in; i++) {
       for (int j = 0; j < jn; j++) {
         for (int k = 0; k < kn; k++) {
