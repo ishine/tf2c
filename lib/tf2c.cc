@@ -181,13 +181,12 @@ Tensor* tf2c_matmul(const Tensor* a, const Tensor* b) {
     int jn = a->shape.dims[1];
     int kn = b->shape.dims[1];
     Tensor* tensor = tf2c_tensor(a->type, tf2c_shape2(in, kn));
+    tf2c_fill<float>(tensor, 0.0);
     for (int i = 0; i < in; i++) {
-      for (int k = 0; k < kn; k++) {
-        float s = 0;
-        for (int j = 0; j < jn; j++) {
-          s += a->mat<T>(i, j) * b->mat<T>(j, k);
+      for (int j = 0; j < jn; j++) {
+        for (int k = 0; k < kn; k++) {
+          tensor->mat<T>(i, k) += a->mat<T>(i, j) * b->mat<T>(j, k);
         }
-        tensor->mat<T>(i, k) = s;
       }
     }
     return tensor;
