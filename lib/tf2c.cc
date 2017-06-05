@@ -168,14 +168,28 @@ static void tf2c_matmul_avx2(const Tensor* a, const Tensor* b, Tensor* r) {
   int in = a->shape.dims[0];
   int jn = a->shape.dims[1];
   int kn = b->shape.dims[1];
-  for (int i = 0; i < in; i++) {
-    for (int j = 0; j < jn; j++) {
-      __m256 av = _mm256_broadcast_ss(&a->mat<float>(i, j));
-      for (int k = 0; k < kn; k += 8) {
-        __m256 rv = _mm256_loadu_ps(&r->mat<float>(i, k));
-        __m256 bv = _mm256_loadu_ps(&b->mat<float>(j, k));
-        rv = _mm256_fmadd_ps(av, bv, rv);
-        _mm256_storeu_ps(&r->mat<float>(i, k), rv);
+  for (int i = 0; i < in; i += 2) {
+    for (int k = 0; k < kn; k += 16) {
+      __m256 rv[2][2] __attribute__((aligned(32))) = { 0 };
+      for (int j = 0; j < jn; j++) {
+        for (int i2 = 0; i2 < 2; i2++) {
+          for (int k2 = 0; k2 < 2; k2++) {
+            rv[i2][k2] = _mm256_fmadd_ps(
+                _mm256_broadcast_ss(&a->mat<float>(i + i2, j)),
+                _mm256_loadu_ps(&b->mat<float>(j, k + k2 * 8)),
+                rv[i2][k2]);
+          }
+        }
+      }
+
+      for (int i2 = 0; i2 < 2; i2++) {
+        for (int k2 = 0; k2 < 2; k2++) {
+          _mm256_storeu_ps(
+              &r->mat<float>(i + i2, k + k2 * 8),
+              _mm256_add_ps(
+                  _mm256_loadu_ps(&r->mat<float>(i + i2, k + k2 * 8)),
+                  rv[i2][k2]));
+        }
       }
     }
   }
