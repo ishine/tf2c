@@ -27,6 +27,11 @@ static void error(const char* fmt, ...) {
   exit(1);
 }
 
+uint tf2c_type_size(Type type) {
+  assert(type == INT || type == FLOAT);
+  return 4;
+}
+
 static void check_shape_eq(const Shape& a, const Shape& b) {
   assert(a.size == b.size);
   assert(a.num_dims == b.num_dims);
@@ -79,8 +84,7 @@ Tensor* tf2c_tensor(Type type, Shape shape) {
   Tensor* tensor = (Tensor*)malloc(sizeof(Tensor));
   tensor->type = type;
   tensor->shape = shape;
-  assert(type == INT || type == FLOAT);
-  uint size = tensor->shape.size * 4;
+  uint size = tensor->shape.size * tf2c_type_size(type);
   tensor->alloc = malloc(size + 63);
   tensor->buf = (void*)(((uintptr_t)tensor->alloc + 63) & ~63);
   return tensor;
@@ -137,6 +141,11 @@ template <class T>
 void tf2c_fill(Tensor* tensor, T v) {
   for (uint i = 0; i < tensor->shape.size; i++)
     tensor->vec<T>(i) = v;
+}
+
+void tf2c_load(Tensor* tensor, const char* fname) {
+  FILE* fp = fopen(fname, "rb");
+  fread(tensor->buf, tf2c_type_size(tensor->type), tensor->shape.size, fp);
 }
 
 template void tf2c_fill<int>(Tensor*, int);
@@ -224,7 +233,7 @@ Tensor* tf2c_matmul(const Tensor* a, const Tensor* b) {
     Tensor* tensor = tf2c_tensor(a->type, tf2c_shape2(in, kn));
     tf2c_fill<float>(tensor, 0.0);
 #ifdef __AVX2__
-    if (a->type == FLOAT && in % 32 == 0) {
+    if (a->type == FLOAT && kn % 32 == 0) {
       tf2c_matmul_avx2(a, b, tensor);
       return tensor;
     }

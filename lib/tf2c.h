@@ -6,6 +6,8 @@ enum Type {
   INT, FLOAT
 };
 
+uint tf2c_type_size(Type type);
+
 #define MAX_DIMS 6
 
 struct Shape {
@@ -54,6 +56,8 @@ void dump_tensor(const Tensor& tensor);
 
 template <class T>
 void tf2c_fill(Tensor* tensor, T v);
+
+void tf2c_load(Tensor* tensor, const char* fname);
 
 template <class T>
 void tf2c_assign(Tensor* tensor, const T* v);

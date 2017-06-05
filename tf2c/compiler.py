@@ -3,6 +3,7 @@ from __future__ import division
 from __future__ import print_function
 
 import collections
+import struct
 import tensorflow as tf
 
 from tf2c import emitter
@@ -89,10 +90,12 @@ class Compiler(object):
             assert self._model
             reader = tf.train.NewCheckpointReader(self._model)
             values = reader.get_tensor(node.name).flatten()
-            ce.emit_line('static const %s v[] = {' % node.dtype)
-            ce.emit_line(', '.join(map(str, values)))
-            ce.emit_line('};')
-            ce.emit_line('tf2c_assign(g_%s, v);' % name)
+            fname = self._model.replace('.ckpt', '-%s.data' % node.ident)
+            with open(fname, 'w') as f:
+                pack_type = node.dtype[0]
+                for v in values:
+                    f.write(struct.pack(pack_type, v))
+            ce.emit_line('tf2c_load(g_%s, "%s");' % (name, fname))
             ce.emit_line('}')
 
     def compile(self, g):
