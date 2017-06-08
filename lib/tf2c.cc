@@ -182,6 +182,9 @@ static bool tf2c_matmul_avx2(const Tensor* a, const Tensor* b, Tensor* r) {
   static const uint KS = 2;
   if (in % IS != 0 || kn % (KS * 8) != 0)
     return false;
+  // broadcast: I*J*K = 128M
+  // fma: I*J*K/8 = 128M
+  // load: I*J*K = 128M
   for (uint i = 0; i < in; i += IS) {
     for (uint k = 0; k < kn; k += KS * 8) {
       __m256 rv[IS][KS] __attribute__((aligned(32))) = { 0 };
@@ -219,6 +222,41 @@ static bool tf2c_vecmatmul_avx2(const Tensor* a, const Tensor* b, Tensor* r) {
   static const uint KS = 4;
   if (kn % (KS * 8) != 0)
     return false;
+#if 0
+  // Not good for cache.
+  for (uint k = 0; k < kn; k += 8) {
+    __m256 rv = {0};
+    for (uint j = 0; j < jn; j++) {
+      __m256 av = _mm256_broadcast_ss(&a->mat<float>(0, j));
+      rv = _mm256_fmadd_ps(av,
+                           _mm256_loadu_ps(&b->mat<float>(j, k)),
+                           rv);
+    }
+    _mm256_storeu_ps(&r->mat<float>(0, k), rv);
+  }
+
+#elif 1
+  // broadcast: J = 3k
+  // fma: J*K/8 = 1.5M
+  // store: J*K/8 = 1.5M
+  // load: J*K/4 = 3M
+  for (uint j = 0; j < jn; j++) {
+    __m256 av = _mm256_broadcast_ss(&a->mat<float>(0, j));
+    for (uint k = 0; k < kn; k += 8) {
+      _mm256_storeu_ps(
+          &r->mat<float>(0, k),
+          _mm256_fmadd_ps(
+              av,
+              _mm256_loadu_ps(&b->mat<float>(j, k)),
+              _mm256_loadu_ps(&r->mat<float>(0, k))));
+    }
+  }
+
+#else
+  // broadcast: J = 3k
+  // fma: J*K/8 = 1.5M
+  // store: J*KS = 12k
+  // load: J*K/8 + J*KS = 1.5M
   for (uint k = 0; k < kn; k += KS * 8) {
     __m256 rv[KS] __attribute__((aligned(32))) = { 0 };
     for (uint j = 0; j < jn; j++) {
@@ -239,6 +277,7 @@ static bool tf2c_vecmatmul_avx2(const Tensor* a, const Tensor* b, Tensor* r) {
               rv[k2]));
     }
   }
+#endif
   return true;
 }
 
