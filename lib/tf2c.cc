@@ -173,12 +173,15 @@ Tensor* tf2c_add(const Tensor* a, const Tensor* b) {
 INSTANTIATE2(Tensor*, tf2c_add, (const Tensor* a, const Tensor* b));
 
 #ifdef __AVX2__
-static void tf2c_matmul_avx2(const Tensor* a, const Tensor* b, Tensor* r) {
+
+static bool tf2c_matmul_avx2(const Tensor* a, const Tensor* b, Tensor* r) {
   uint in = a->shape.dims[0];
   uint jn = a->shape.dims[1];
   uint kn = b->shape.dims[1];
   static const uint IS = 4;
   static const uint KS = 2;
+  if (in % IS != 0 || kn % (KS * 8) != 0)
+    return false;
   for (uint i = 0; i < in; i += IS) {
     for (uint k = 0; k < kn; k += KS * 8) {
       __m256 rv[IS][KS] __attribute__((aligned(32))) = { 0 };
@@ -204,7 +207,41 @@ static void tf2c_matmul_avx2(const Tensor* a, const Tensor* b, Tensor* r) {
       }
     }
   }
+  return true;
 }
+
+static bool tf2c_vecmatmul_avx2(const Tensor* a, const Tensor* b, Tensor* r) {
+  uint in = a->shape.dims[0];
+  if (in != 1)
+    return false;
+  uint jn = a->shape.dims[1];
+  uint kn = b->shape.dims[1];
+  static const uint KS = 4;
+  if (kn % (KS * 8) != 0)
+    return false;
+  for (uint k = 0; k < kn; k += KS * 8) {
+    __m256 rv[KS] __attribute__((aligned(32))) = { 0 };
+    for (uint j = 0; j < jn; j++) {
+      __m256 av = _mm256_broadcast_ss(&a->mat<float>(0, j));
+      for (uint k2 = 0; k2 < KS; k2++) {
+        rv[k2] = _mm256_fmadd_ps(
+            av,
+            _mm256_loadu_ps(&b->mat<float>(j, k + k2 * 8)),
+            rv[k2]);
+      }
+    }
+
+    for (uint k2 = 0; k2 < KS; k2++) {
+      _mm256_storeu_ps(
+          &r->mat<float>(0, k + k2 * 8),
+          _mm256_add_ps(
+              _mm256_loadu_ps(&r->mat<float>(0, k + k2 * 8)),
+              rv[k2]));
+    }
+  }
+  return true;
+}
+
 #endif
 
 template <class T>
@@ -232,12 +269,16 @@ Tensor* tf2c_matmul(const Tensor* a, const Tensor* b) {
     int kn = b->shape.dims[1];
     Tensor* tensor = tf2c_tensor(a->type, tf2c_shape2(in, kn));
     tf2c_fill<float>(tensor, 0.0);
+
 #ifdef __AVX2__
-    if (a->type == FLOAT && kn % 32 == 0) {
-      tf2c_matmul_avx2(a, b, tensor);
-      return tensor;
+    if (a->type == FLOAT) {
+      if (tf2c_vecmatmul_avx2(a, b, tensor))
+        return tensor;
+      if (tf2c_matmul_avx2(a, b, tensor))
+        return tensor;
     }
 #endif
+
     for (int i = 0; i < in; i++) {
       for (int j = 0; j < jn; j++) {
         for (int k = 0; k < kn; k++) {
