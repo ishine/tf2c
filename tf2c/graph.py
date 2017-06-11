@@ -137,7 +137,7 @@ class Graph(object):
 
     def show(self, out):
         def _show_node(out, node, depth):
-            out.write('// ' + ' ' * depth + node.name + '\n')
+            out.write('// ' + ' ' * depth + '%s (%s)\n' % (node.name, node.op))
             for input in node.inputs:
                 _show_node(out, input, depth + 1)
         for node in self._output_nodes:
