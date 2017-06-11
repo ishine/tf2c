@@ -293,6 +293,38 @@ static bool tf2c_vecmatmul_avx2(const Tensor* a, const Tensor* b, Tensor* r) {
   return true;
 }
 
+Tensor* tf2c_vecmatmul_trans_avx2(const Tensor* a, const Tensor* b,
+                                  int transpose_a, int transpose_b) {
+  if (a->type != FLOAT || transpose_a || !transpose_b)
+    return nullptr;
+  uint in = a->shape.dims[0];
+  if (in != 1)
+    return nullptr;
+  assert(a->shape.dims[1] == b->shape.dims[1]);
+  uint jn = b->shape.dims[0];
+  uint kn = b->shape.dims[1];
+  if (kn % 8 != 0)
+    return nullptr;
+
+  Tensor* r = tf2c_tensor(a->type, tf2c_shape2(1, jn));
+  tf2c_fill<float>(r, 0.0);
+  for (uint j = 0; j < jn; j++) {
+    __m256 rv = { 0 };
+    for (uint k = 0; k < kn; k += 8) {
+      __m256 av = _mm256_loadu_ps(&a->vec<float>(k));
+      __m256 bv = _mm256_loadu_ps(&b->mat<float>(j, k));
+      rv = _mm256_fmadd_ps(av, bv, rv);
+    }
+    float t[8] __attribute__((aligned(32)));
+    _mm256_storeu_ps(t, rv);
+    float rvt = 0;
+    for (uint i = 0; i < 8; i++)
+      rvt += t[i];
+    r->vec<float>(j) = rvt;
+  }
+  return r;
+}
+
 #endif
 
 template <class T>
@@ -331,6 +363,13 @@ Tensor* tf2c_matmul(const Tensor* a, const Tensor* b,
     }
     return tensor;
   } else {
+    Tensor* tensor = nullptr;
+#ifdef __AVX2__
+    tensor = tf2c_vecmatmul_trans_avx2(a, b, transpose_a, transpose_b);
+    if (tensor)
+      return tensor;
+#endif
+
     if (transpose_a)
       a = tf2c_transpose_mat<void>(a);
     if (transpose_b)
@@ -341,7 +380,7 @@ Tensor* tf2c_matmul(const Tensor* a, const Tensor* b,
     uint in = a->shape.dims[0];
     uint jn = a->shape.dims[1];
     uint kn = b->shape.dims[1];
-    Tensor* tensor = tf2c_tensor(a->type, tf2c_shape2(in, kn));
+    tensor = tf2c_tensor(a->type, tf2c_shape2(in, kn));
     tf2c_fill<float>(tensor, 0.0);
 
 #ifdef __AVX2__
