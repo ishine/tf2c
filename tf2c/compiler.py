@@ -17,6 +17,7 @@ OP_MAP = {}
 for op in [
         ('const', 0, False),
         ('variable', 0, False),
+        ('variablev2', 0, False),
         ('identity', 1, True),
         ('add', 2, True),
         ('matmul', 2, True),
@@ -47,7 +48,8 @@ class Compiler(object):
             ce.emit_line('}')
             return
 
-        if op.name == 'const' or op.name == 'variable':
+        if (op.name == 'const' or op.name == 'variable' or
+            op.name == 'variablev2'):
             ce.emit_line('Tensor* g_%s;' % name)
             ce.emit_line('Tensor* %s() {' % name)
             ce.emit_line('return g_%s;' % name)
@@ -81,7 +83,7 @@ class Compiler(object):
                 ce.emit_line('tf2c_assign(g_%s, v);' % name)
             ce.emit_line('}')
 
-        elif op.name == 'variable':
+        elif op.name == 'variable' or op.name == 'variablev2':
             ce.emit_line('{')
             self._emit_shape(ce, node.shape)
             ce.emit_line('g_%s = tf2c_tensor(%s, shape);' %
