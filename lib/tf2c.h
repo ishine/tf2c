@@ -69,6 +69,7 @@ template <class T>
 Tensor* tf2c_add(const Tensor* a, const Tensor* b);
 
 template <class T>
-Tensor* tf2c_matmul(const Tensor* a, const Tensor* b);
+Tensor* tf2c_matmul(const Tensor* a, const Tensor* b,
+                    int transpose_a, int transpose_b);
 
 void init();

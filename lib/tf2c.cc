@@ -123,6 +123,18 @@ void dump_tensor(const Tensor& tensor) {
   template ret name<int> args;                  \
   template ret name<float> args;
 
+#define INSTANTIATE1(ret, name, args)                           \
+  INSTANTIATE(ret, name, args);                                 \
+  template <>                                                   \
+  Tensor* name<void>(const Tensor* a) {                         \
+    if (a->type == INT)                                         \
+      return name<int>(a);                                      \
+    else if (a->type == FLOAT)                                  \
+      return name<float>(a);                                    \
+    else                                                        \
+      error("Unknown type: %d", a->type);                       \
+  }
+
 #define INSTANTIATE2(ret, name, args)                           \
   INSTANTIATE(ret, name, args);                                 \
   template <>                                                   \
@@ -284,28 +296,51 @@ static bool tf2c_vecmatmul_avx2(const Tensor* a, const Tensor* b, Tensor* r) {
 #endif
 
 template <class T>
-Tensor* tf2c_matmul(const Tensor* a, const Tensor* b) {
+Tensor* tf2c_transpose_mat(const Tensor* a) {
+  assert(a->shape.num_dims == 2);
+  uint in = a->shape.dims[0];
+  uint jn = a->shape.dims[1];
+  Tensor* tensor = tf2c_tensor(a->type, tf2c_shape2(jn, in));
+  for (uint i = 0; i < in; i++) {
+    for (uint j = 0; j < jn; j++) {
+      tensor->mat<T>(j, i) = a->mat<T>(i, j);
+    }
+  }
+  return tensor;
+}
+
+INSTANTIATE1(Tensor*, tf2c_transpose_mat, (const Tensor* a));
+
+template <class T>
+Tensor* tf2c_matmul(const Tensor* a, const Tensor* b,
+                    int transpose_a, int transpose_b) {
   if (a->shape.num_dims == 1) {
     assert(b->shape.num_dims == 2);
     assert(a->shape.dims[0] == b->shape.dims[0]);
-    int in = a->shape.dims[0];
-    int kn = b->shape.dims[1];
+    assert(!transpose_a);
+    assert(!transpose_b);
+    uint in = a->shape.dims[0];
+    uint kn = b->shape.dims[1];
     Tensor* tensor = tf2c_tensor(a->type, tf2c_shape1(kn));
-    for (int k = 0; k < kn; k++) {
+    for (uint k = 0; k < kn; k++) {
       float s = 0;
-      for (int i = 0; i < in; i++) {
+      for (uint i = 0; i < in; i++) {
         s += a->vec<T>(i) * b->mat<T>(i, k);
       }
       tensor->vec<T>(k) = s;
     }
     return tensor;
   } else {
+    if (transpose_a)
+      a = tf2c_transpose_mat<void>(a);
+    if (transpose_b)
+      b = tf2c_transpose_mat<void>(b);
     assert(a->shape.num_dims == 2);
     assert(b->shape.num_dims == 2);
     assert(a->shape.dims[a->shape.num_dims - 1] == b->shape.dims[0]);
-    int in = a->shape.dims[0];
-    int jn = a->shape.dims[1];
-    int kn = b->shape.dims[1];
+    uint in = a->shape.dims[0];
+    uint jn = a->shape.dims[1];
+    uint kn = b->shape.dims[1];
     Tensor* tensor = tf2c_tensor(a->type, tf2c_shape2(in, kn));
     tf2c_fill<float>(tensor, 0.0);
 
@@ -318,9 +353,9 @@ Tensor* tf2c_matmul(const Tensor* a, const Tensor* b) {
     }
 #endif
 
-    for (int i = 0; i < in; i++) {
-      for (int j = 0; j < jn; j++) {
-        for (int k = 0; k < kn; k++) {
+    for (uint i = 0; i < in; i++) {
+      for (uint j = 0; j < jn; j++) {
+        for (uint k = 0; k < kn; k++) {
           tensor->mat<T>(i, k) += a->mat<T>(i, j) * b->mat<T>(j, k);
         }
       }
@@ -329,4 +364,14 @@ Tensor* tf2c_matmul(const Tensor* a, const Tensor* b) {
   }
 }
 
-INSTANTIATE2(Tensor*, tf2c_matmul, (const Tensor* a, const Tensor* b));
+template<>
+Tensor* tf2c_matmul<void>(const Tensor* a, const Tensor* b,
+                          int transpose_a, int transpose_b) {
+  assert(a->type == b->type);
+  if (a->type == INT)
+    return tf2c_matmul<int>(a, b, transpose_a, transpose_b);
+  else if (a->type == FLOAT)
+    return tf2c_matmul<float>(a, b, transpose_a, transpose_b);
+  else
+    error("Unknown type: %d", a->type);
+}

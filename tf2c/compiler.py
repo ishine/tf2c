@@ -20,7 +20,7 @@ for op in [
         ('variablev2', 0, False),
         ('identity', 1, True),
         ('add', 2, True),
-        ('matmul', 2, True),
+        ('matmul', 2, False),
 ]:
     OP_MAP[op[0]] = OpType(*op)
 
@@ -30,6 +30,14 @@ class Compiler(object):
         self._ce = emitter.CodeEmitter()
         self._model = model
 
+    def _emit_args(self, node, op):
+        args = []
+        for i in xrange(op.arity):
+            self._ce.emit_line('Tensor* a%d = %s();' %
+                               (i, node.inputs[i].ident))
+            args.append('a%d' % i)
+        return args
+
     def _compile_node(self, node):
         ce = self._ce
         op = OP_MAP[node.op.lower()]
@@ -38,11 +46,7 @@ class Compiler(object):
 
         if op.is_simple:
             ce.emit_line('Tensor* %s() {' % name)
-            args = []
-            for i in xrange(op.arity):
-                ce.emit_line('Tensor* a%d = %s();' %
-                             (i, node.inputs[i].ident))
-                args.append('a%d' % i)
+            args = self._emit_args(node, op)
             ce.emit_line('return tf2c_%s<void>(%s);' %
                          (op.name, ','.join(args)))
             ce.emit_line('}')
@@ -53,6 +57,17 @@ class Compiler(object):
             ce.emit_line('Tensor* g_%s;' % name)
             ce.emit_line('Tensor* %s() {' % name)
             ce.emit_line('return g_%s;' % name)
+            ce.emit_line('}')
+
+        elif op.name == 'matmul':
+            transpose_a = '1' if node.attr('transpose_a').b else '0'
+            transpose_b = '1' if node.attr('transpose_b').b else '0'
+            ce.emit_line('Tensor* %s() {' % name)
+            args = self._emit_args(node, op)
+            args.append(transpose_a)
+            args.append(transpose_b)
+            ce.emit_line('return tf2c_%s<void>(%s);' %
+                         (op.name, ','.join(args)))
             ce.emit_line('}')
 
     def _emit_shape(self, ce, shape, var_name='shape'):
