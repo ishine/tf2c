@@ -22,7 +22,7 @@ def get_dtype_str(dt):
 class Shape(object):
     def __init__(self, shape_def):
         self.dims = [d.size for d in shape_def.dim]
-        self.size = reduce(lambda a, b: a * b, self.dims)
+        self.size = reduce(lambda a, b: a * b, self.dims) if self.dims else 1
 
     def dims_str(self):
         return ', '.join(map(str, self.dims) + ['-1'])
