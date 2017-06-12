@@ -8,4 +8,4 @@ def gen_graph():
 
 
 def gen_model(sess):
-    sess.run(tf.initialize_all_variables())
+    sess.run(tf.global_variables_initializer())
