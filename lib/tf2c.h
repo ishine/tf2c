@@ -66,6 +66,12 @@ template <class T>
 Tensor* tf2c_identity(const Tensor* a) { return (Tensor*)a; }
 
 template <class T>
+Tensor* tf2c_tanh(const Tensor* a);
+
+template <class T>
+Tensor* tf2c_sigmoid(const Tensor* a);
+
+template <class T>
 Tensor* tf2c_add(const Tensor* a, const Tensor* b);
 
 template <class T>

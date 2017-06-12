@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import re
 import struct
 
 import tensorflow as tf
@@ -125,6 +126,9 @@ class Graph(object):
             seen_nodes.add(node.name)
 
             for input_name in node._node_def.input:
+                if input_name.startswith('^'):
+                    input_name = input_name[1:]
+                input_name = re.sub(r':\d+$', '', input_name)
                 input = self._node_map[input_name]
                 node._inputs.append(input)
                 input._outputs.append(node)
@@ -136,12 +140,17 @@ class Graph(object):
             _create_edges(node)
 
     def show(self, out):
-        def _show_node(out, node, depth):
+        def _show_node(out, node, seen):
+            depth = len(seen)
             out.write('// ' + ' ' * depth + '%s (%s)\n' % (node.name, node.op))
+            if node.name in seen:
+                return
+            seen.add(node.name)
             for input in node.inputs:
-                _show_node(out, input, depth + 1)
+                _show_node(out, input, seen)
+            seen.remove(node.name)
         for node in self._output_nodes:
-            _show_node(out, node, 0)
+            _show_node(out, node, set())
 
     def all_nodes(self):
         return self._all_nodes

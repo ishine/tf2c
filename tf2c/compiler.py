@@ -19,6 +19,8 @@ for op in [
         ('variable', 0, False),
         ('variablev2', 0, False),
         ('identity', 1, True),
+        ('tanh', 1, True),
+        ('sigmoid', 1, True),
         ('add', 2, True),
         ('matmul', 2, False),
 ]:

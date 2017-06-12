@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <math.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -171,6 +172,28 @@ void tf2c_assign(Tensor* tensor, const T* v) {
 
 template void tf2c_assign<int>(Tensor*, const int*);
 template void tf2c_assign<float>(Tensor*, const float*);
+
+template <class T>
+Tensor* tf2c_tanh(const Tensor* a) {
+  Tensor* r = tf2c_tensor(a->type, a->shape);
+  for (uint i = 0; i < a->shape.size; i++) {
+    r->vec<T>(i) = tanh(a->vec<T>(i));
+  }
+  return r;
+}
+
+INSTANTIATE1(Tensor*, tf2c_tanh, (const Tensor* a));
+
+template <class T>
+Tensor* tf2c_sigmoid(const Tensor* a) {
+  Tensor* r = tf2c_tensor(a->type, a->shape);
+  for (uint i = 0; i < a->shape.size; i++) {
+    r->vec<T>(i) = 1.0 / (1.0 + exp(-a->vec<T>(i)));
+  }
+  return r;
+}
+
+INSTANTIATE1(Tensor*, tf2c_sigmoid, (const Tensor* a));
 
 template <class T>
 Tensor* tf2c_add(const Tensor* a, const Tensor* b) {
