@@ -1,9 +1,15 @@
 #!/usr/bin/ruby
 
-tests = Dir.glob('tests/*_large.py').sort
+if ARGV[0]
+  names = ARGV
+else
+  tests = Dir.glob('tests/*_large.py').sort
+  names = tests.map do |test|
+    test[/tests\/(.*)_large\.py$/, 1]
+  end
+end
 
-tests.each do |test|
-  name = test[/tests\/(.*)_large\.py$/, 1]
+names.each do |name|
   full = name + '_large'
   tf = `python runtest.py bench #{full} 2> /dev/null`.to_f
   c = `out/#{full}.exe --bench`.to_f
