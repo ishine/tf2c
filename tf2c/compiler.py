@@ -22,6 +22,7 @@ for op in [
         ('tanh', 1, True),
         ('sigmoid', 1, True),
         ('add', 2, True),
+        ('mul', 2, True),
         ('matmul', 2, False),
 ]:
     OP_MAP[op[0]] = OpType(*op)

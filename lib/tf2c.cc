@@ -207,6 +207,18 @@ Tensor* tf2c_add(const Tensor* a, const Tensor* b) {
 
 INSTANTIATE2(Tensor*, tf2c_add, (const Tensor* a, const Tensor* b));
 
+template <class T>
+Tensor* tf2c_mul(const Tensor* a, const Tensor* b) {
+  check_tensor_type_eq(*a, *b);
+  Tensor* r = tf2c_tensor(a->type, a->shape);
+  for (uint i = 0; i < a->shape.size; i++) {
+    r->vec<T>(i) = a->vec<T>(i) * b->vec<T>(i);
+  }
+  return r;
+}
+
+INSTANTIATE2(Tensor*, tf2c_mul, (const Tensor* a, const Tensor* b));
+
 #ifdef __AVX2__
 
 static bool tf2c_matmul_avx2(const Tensor* a, const Tensor* b, Tensor* r) {
