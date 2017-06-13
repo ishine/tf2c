@@ -78,6 +78,12 @@ template <class T>
 Tensor* tf2c_mul(const Tensor* a, const Tensor* b);
 
 template <class T>
+Tensor* tf2c_minimum(const Tensor* a, const Tensor* b);
+
+template <class T>
+Tensor* tf2c_maximum(const Tensor* a, const Tensor* b);
+
+template <class T>
 Tensor* tf2c_matmul(const Tensor* a, const Tensor* b,
                     int transpose_a, int transpose_b);
 

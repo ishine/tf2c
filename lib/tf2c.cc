@@ -5,11 +5,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <algorithm>
+
 #ifdef __AVX2__
 #include <immintrin.h>
 #endif
 
 #include "tf2c.h"
+
+using namespace std;
 
 #ifdef __GNUC__
 #define NORETURN __attribute__((noreturn))
@@ -218,6 +222,32 @@ Tensor* tf2c_mul(const Tensor* a, const Tensor* b) {
 }
 
 INSTANTIATE2(Tensor*, tf2c_mul, (const Tensor* a, const Tensor* b));
+
+template <class T>
+Tensor* tf2c_minimum(const Tensor* a, const Tensor* b) {
+  assert(b->shape.size == 1);
+  T v = b->vec<T>(0);
+  Tensor* r = tf2c_tensor(a->type, a->shape);
+  for (uint i = 0; i < a->shape.size; i++) {
+    r->vec<T>(i) = min(a->vec<T>(i), v);
+  }
+  return r;
+}
+
+INSTANTIATE2(Tensor*, tf2c_minimum, (const Tensor* a, const Tensor* b));
+
+template <class T>
+Tensor* tf2c_maximum(const Tensor* a, const Tensor* b) {
+  assert(b->shape.size == 1);
+  T v = b->vec<T>(0);
+  Tensor* r = tf2c_tensor(a->type, a->shape);
+  for (uint i = 0; i < a->shape.size; i++) {
+    r->vec<T>(i) = max(a->vec<T>(i), v);
+  }
+  return r;
+}
+
+INSTANTIATE2(Tensor*, tf2c_maximum, (const Tensor* a, const Tensor* b));
 
 #ifdef __AVX2__
 

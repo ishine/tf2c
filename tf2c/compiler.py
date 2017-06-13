@@ -23,6 +23,8 @@ for op in [
         ('sigmoid', 1, True),
         ('add', 2, True),
         ('mul', 2, True),
+        ('minimum', 2, True),
+        ('maximum', 2, True),
         ('matmul', 2, False),
 ]:
     OP_MAP[op[0]] = OpType(*op)
@@ -92,8 +94,8 @@ class Compiler(object):
                          (name, node.dtype.upper()))
             assert value.shape.size
             if value.shape.size == 1:
-                ce.emit_line('tf2c_fill(g_%s, %s);' %
-                             (name, str(value.value[0])))
+                ce.emit_line('tf2c_fill<%s>(g_%s, %s);' %
+                             (node.dtype, name, str(value.value[0])))
             else:
                 ce.emit_line('static const %s v[] = {' % node.dtype)
                 ce.emit_line(', '.join(map(str, value.value)))
