@@ -25,7 +25,7 @@ def undump_tensor(input):
     return map(eval, lines)
 
 mode = sys.argv[1]
-name = sys.argv[2]
+name, _ = os.path.splitext(os.path.basename(sys.argv[2]))
 if mode == 'output':
     module = importlib.import_module('tests.' + name)
     op = module.gen_graph()
@@ -42,6 +42,28 @@ if mode == 'output':
     elapsed = time.time() - start
     dump_tensor(result)
     print(elapsed)
+
+elif mode == 'bench':
+    if not os.path.exists('out/%s.pbtxt' % name):
+        raise RuntimeError('Run runtest.py output first')
+
+    module = importlib.import_module('tests.' + name)
+    op = module.gen_graph()
+
+    sess = tf.Session()
+    if hasattr(module, 'gen_model'):
+        saver = tf.train.Saver(tf.trainable_variables())
+        saver.restore(sess, 'out/%s.ckpt' % name)
+
+    start = time.time()
+    n = 0
+    while True:
+        result = sess.run(op)
+        n += 1
+        elapsed = time.time() - start
+        if elapsed > 1.0:
+            break
+    print('%f' % (elapsed / n))
 
 elif mode == 'test':
     with open('out/%s.out' % name) as f:
