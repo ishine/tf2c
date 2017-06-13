@@ -2,7 +2,7 @@ import tensorflow as tf
 
 
 def gen_graph():
-    a = tf.Variable(tf.random_normal([1, 1024]), name='a')
+    a = tf.Variable(tf.random_normal([100, 1024]), name='a')
     r = tf.tanh(a, name='result')
     return r
 
