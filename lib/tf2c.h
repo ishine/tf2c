@@ -23,22 +23,22 @@ struct Tensor {
   void* alloc;
 
   template<class T>
-  T& vec(int x) {
+  T& vec(uint x) {
     return static_cast<T*>(buf)[x];
   }
 
   template<class T>
-  const T& vec(int x) const {
+  const T& vec(uint x) const {
     return static_cast<T*>(buf)[x];
   }
 
   template<class T>
-  T& mat(int y, int x) {
+  T& mat(uint y, uint x) {
     return static_cast<T*>(buf)[y * shape.dims[1] + x];
   }
 
   template<class T>
-  const T& mat(int y, int x) const {
+  const T& mat(uint y, uint x) const {
     return static_cast<T*>(buf)[y * shape.dims[1] + x];
   }
 };
@@ -56,6 +56,18 @@ void dump_tensor(const Tensor& tensor);
 
 template <class T>
 void tf2c_fill(Tensor* tensor, T v);
+
+template <class T>
+Tensor* tf2c_fill(const Tensor* a, const Tensor* b);
+
+template <class T>
+Tensor* tf2c_reshape(const Tensor* a, const Tensor* b);
+
+template <class T>
+Tensor* tf2c_sum(const Tensor* a, const Tensor* b);
+
+template <class T>
+Tensor* tf2c_broadcastgradientargs(const Tensor* a, const Tensor* b);
 
 void tf2c_load(Tensor* tensor, const char* fname);
 

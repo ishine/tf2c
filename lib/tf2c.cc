@@ -61,6 +61,17 @@ Shape tf2c_shape(const int* dims) {
   return shape;
 }
 
+Shape tf2c_shape_from_tensor(const Tensor* a) {
+  assert(a->type == INT);
+  assert(a->shape.num_dims == 1);
+  assert(a->shape.size <= MAX_DIMS);
+  int dims[MAX_DIMS + 1];
+  for (uint i = 0; i < a->shape.size; i++)
+    dims[i] = a->vec<uint>(i);
+  dims[a->shape.size] = -1;
+  return tf2c_shape(dims);
+}
+
 Shape tf2c_shape0() {
   Shape shape;
   shape.size = 1;
@@ -128,8 +139,8 @@ void dump_tensor(const Tensor& tensor) {
   template ret name<int> args;                  \
   template ret name<float> args;
 
-#define INSTANTIATE1(ret, name, args)                           \
-  INSTANTIATE(ret, name, args);                                 \
+#define INSTANTIATE1(name)                                      \
+  INSTANTIATE(Tensor*, name, (const Tensor* a));                \
   template <>                                                   \
   Tensor* name<void>(const Tensor* a) {                         \
     if (a->type == INT)                                         \
@@ -140,19 +151,17 @@ void dump_tensor(const Tensor& tensor) {
       error("Unknown type: %d", a->type);                       \
   }
 
-#define INSTANTIATE2(ret, name, args)                           \
-  INSTANTIATE(ret, name, args);                                 \
-  template <>                                                   \
-  Tensor* name<void>(const Tensor* a, const Tensor* b) {        \
-    assert(a->type == b->type);                                 \
-    if (a->type == INT)                                         \
-      return name<int>(a, b);                                   \
-    else if (a->type == FLOAT)                                  \
-      return name<float>(a, b);                                 \
-    else                                                        \
-      error("Unknown type: %d", a->type);                       \
+#define INSTANTIATE2(name, d)                                       \
+  INSTANTIATE(Tensor*, name, (const Tensor* a, const Tensor* b));   \
+  template <>                                                       \
+  Tensor* name<void>(const Tensor* a, const Tensor* b) {            \
+    if (d->type == INT)                                             \
+      return name<int>(a, b);                                       \
+    else if (d->type == FLOAT)                                      \
+      return name<float>(a, b);                                     \
+    else                                                            \
+      error("Unknown type: %d", d->type);                           \
   }
-
 
 template <class T>
 void tf2c_fill(Tensor* tensor, T v) {
@@ -167,6 +176,41 @@ void tf2c_load(Tensor* tensor, const char* fname) {
 
 template void tf2c_fill<int>(Tensor*, int);
 template void tf2c_fill<float>(Tensor*, float);
+
+template <class T>
+Tensor* tf2c_fill(const Tensor* a, const Tensor* b) {
+  assert(b->shape.size == 1);
+  Tensor* r = tf2c_tensor(a->type, tf2c_shape_from_tensor(a));
+  tf2c_fill(r, b->vec<T>(0));
+  return r;
+}
+
+INSTANTIATE2(tf2c_fill, b);
+
+template <class T>
+Tensor* tf2c_reshape(const Tensor* a, const Tensor* b) {
+  Tensor* r = tf2c_identity<void>(a);
+  r->shape = tf2c_shape_from_tensor(b);
+  return r;
+}
+
+INSTANTIATE2(tf2c_reshape, a);
+
+template <class T>
+Tensor* tf2c_sum(const Tensor* a, const Tensor*) {
+  // TODO
+  return (Tensor*)a;
+}
+
+INSTANTIATE2(tf2c_sum, a);
+
+template <class T>
+Tensor* tf2c_broadcastgradientargs(const Tensor*, const Tensor*) {
+  // TODO
+  return nullptr;
+}
+
+INSTANTIATE2(tf2c_broadcastgradientargs, a);
 
 template <class T>
 void tf2c_assign(Tensor* tensor, const T* v) {
@@ -186,7 +230,7 @@ Tensor* tf2c_tanh(const Tensor* a) {
   return r;
 }
 
-INSTANTIATE1(Tensor*, tf2c_tanh, (const Tensor* a));
+INSTANTIATE1(tf2c_tanh);
 
 template <class T>
 Tensor* tf2c_sigmoid(const Tensor* a) {
@@ -197,7 +241,7 @@ Tensor* tf2c_sigmoid(const Tensor* a) {
   return r;
 }
 
-INSTANTIATE1(Tensor*, tf2c_sigmoid, (const Tensor* a));
+INSTANTIATE1(tf2c_sigmoid);
 
 template <class T>
 Tensor* tf2c_add(const Tensor* a, const Tensor* b) {
@@ -209,7 +253,7 @@ Tensor* tf2c_add(const Tensor* a, const Tensor* b) {
   return r;
 }
 
-INSTANTIATE2(Tensor*, tf2c_add, (const Tensor* a, const Tensor* b));
+INSTANTIATE2(tf2c_add, a);
 
 template <class T>
 Tensor* tf2c_mul(const Tensor* a, const Tensor* b) {
@@ -221,7 +265,7 @@ Tensor* tf2c_mul(const Tensor* a, const Tensor* b) {
   return r;
 }
 
-INSTANTIATE2(Tensor*, tf2c_mul, (const Tensor* a, const Tensor* b));
+INSTANTIATE2(tf2c_mul, a);
 
 template <class T>
 Tensor* tf2c_minimum(const Tensor* a, const Tensor* b) {
@@ -234,7 +278,7 @@ Tensor* tf2c_minimum(const Tensor* a, const Tensor* b) {
   return r;
 }
 
-INSTANTIATE2(Tensor*, tf2c_minimum, (const Tensor* a, const Tensor* b));
+INSTANTIATE2(tf2c_minimum, a);
 
 template <class T>
 Tensor* tf2c_maximum(const Tensor* a, const Tensor* b) {
@@ -247,7 +291,7 @@ Tensor* tf2c_maximum(const Tensor* a, const Tensor* b) {
   return r;
 }
 
-INSTANTIATE2(Tensor*, tf2c_maximum, (const Tensor* a, const Tensor* b));
+INSTANTIATE2(tf2c_maximum, a);
 
 #ifdef __AVX2__
 
@@ -406,7 +450,7 @@ Tensor* tf2c_transpose_mat(const Tensor* a) {
   return tensor;
 }
 
-INSTANTIATE1(Tensor*, tf2c_transpose_mat, (const Tensor* a));
+INSTANTIATE1(tf2c_transpose_mat);
 
 template <class T>
 Tensor* tf2c_matmul(const Tensor* a, const Tensor* b,
