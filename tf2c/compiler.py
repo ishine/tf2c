@@ -15,23 +15,23 @@ OpType = collections.namedtuple('OpType', [
 
 OP_MAP = {}
 for op in [
-        ('const', 0, False),
-        ('variable', 0, False),
-        ('variablev2', 0, False),
-        ('identity', 1, True),
-        ('tanh', 1, True),
-        ('sigmoid', 1, True),
-        ('fill', 2, True),
-        ('add', 2, True),
-        ('mul', 2, True),
-        ('sum', 2, True),
-        ('broadcastgradientargs', 2, True),
-        ('reshape', 2, True),
-        ('minimum', 2, True),
-        ('maximum', 2, True),
-        ('lessequal', 2, True),
-        ('greaterequal', 2, True),
-        ('matmul', 2, False),
+        ('Const', 0, False),
+        ('Variable', 0, False),
+        ('VariableV2', 0, False),
+        ('Identity', 1, True),
+        ('Tanh', 1, True),
+        ('Sigmoid', 1, True),
+        ('Fill', 2, True),
+        ('Add', 2, True),
+        ('Mul', 2, True),
+        ('Sum', 2, True),
+        ('BroadcastGradientArgs', 2, True),
+        ('Reshape', 2, True),
+        ('Minimum', 2, True),
+        ('Maximum', 2, True),
+        ('LessEqual', 2, True),
+        ('GreaterEqual', 2, True),
+        ('MatMul', 2, False),
 ]:
     OP_MAP[op[0]] = OpType(*op)
 
@@ -51,7 +51,7 @@ class Compiler(object):
 
     def _compile_node(self, node):
         ce = self._ce
-        op = OP_MAP[node.op.lower()]
+        op = OP_MAP[node.op]
         assert op.arity == len(node.inputs)
         name = node.ident
 
@@ -63,14 +63,14 @@ class Compiler(object):
             ce.emit_line('}')
             return
 
-        if (op.name == 'const' or op.name == 'variable' or
-            op.name == 'variablev2'):
+        if (op.name == 'Const' or op.name == 'Variable' or
+            op.name == 'VariableV2'):
             ce.emit_line('Tensor* g_%s;' % name)
             ce.emit_line('Tensor* %s() {' % name)
             ce.emit_line('return g_%s;' % name)
             ce.emit_line('}')
 
-        elif op.name == 'matmul':
+        elif op.name == 'MatMul':
             transpose_a = '1' if node.attr('transpose_a').b else '0'
             transpose_b = '1' if node.attr('transpose_b').b else '0'
             ce.emit_line('Tensor* %s() {' % name)
@@ -89,10 +89,10 @@ class Compiler(object):
 
     def _compile_init(self, node):
         ce = self._ce
-        op = OP_MAP[node.op.lower()]
+        op = OP_MAP[node.op]
         name = node.ident
 
-        if op.name == 'const':
+        if op.name == 'Const':
             ce.emit_line('{')
             value = node.value
             self._emit_shape(ce, value.shape)
@@ -109,7 +109,7 @@ class Compiler(object):
                 ce.emit_line('tf2c_assign(g_%s, v);' % name)
             ce.emit_line('}')
 
-        elif op.name == 'variable' or op.name == 'variablev2':
+        elif op.name == 'Variable' or op.name == 'VariableV2':
             ce.emit_line('{')
             self._emit_shape(ce, node.shape)
             ce.emit_line('g_%s = tf2c_tensor(%s, shape);' %

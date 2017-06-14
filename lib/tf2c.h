@@ -58,16 +58,16 @@ template <class T>
 void tf2c_fill(Tensor* tensor, T v);
 
 template <class T>
-Tensor* tf2c_fill(const Tensor* a, const Tensor* b);
+Tensor* tf2c_Fill(const Tensor* a, const Tensor* b);
 
 template <class T>
-Tensor* tf2c_reshape(const Tensor* a, const Tensor* b);
+Tensor* tf2c_Reshape(const Tensor* a, const Tensor* b);
 
 template <class T>
-Tensor* tf2c_sum(const Tensor* a, const Tensor* b);
+Tensor* tf2c_Sum(const Tensor* a, const Tensor* b);
 
 template <class T>
-Tensor* tf2c_broadcastgradientargs(const Tensor* a, const Tensor* b);
+Tensor* tf2c_BroadcastGradientArgs(const Tensor* a, const Tensor* b);
 
 void tf2c_load(Tensor* tensor, const char* fname);
 
@@ -75,34 +75,34 @@ template <class T>
 void tf2c_assign(Tensor* tensor, const T* v);
 
 template <class T>
-Tensor* tf2c_identity(const Tensor* a) { return (Tensor*)a; }
+Tensor* tf2c_Identity(const Tensor* a) { return (Tensor*)a; }
 
 template <class T>
-Tensor* tf2c_tanh(const Tensor* a);
+Tensor* tf2c_Tanh(const Tensor* a);
 
 template <class T>
-Tensor* tf2c_sigmoid(const Tensor* a);
+Tensor* tf2c_Sigmoid(const Tensor* a);
 
 template <class T>
-Tensor* tf2c_add(const Tensor* a, const Tensor* b);
+Tensor* tf2c_Add(const Tensor* a, const Tensor* b);
 
 template <class T>
-Tensor* tf2c_mul(const Tensor* a, const Tensor* b);
+Tensor* tf2c_Mul(const Tensor* a, const Tensor* b);
 
 template <class T>
-Tensor* tf2c_minimum(const Tensor* a, const Tensor* b);
+Tensor* tf2c_Minimum(const Tensor* a, const Tensor* b);
 
 template <class T>
-Tensor* tf2c_maximum(const Tensor* a, const Tensor* b);
+Tensor* tf2c_Maximum(const Tensor* a, const Tensor* b);
 
 template <class T>
-Tensor* tf2c_lessequal(const Tensor* a, const Tensor* b);
+Tensor* tf2c_LessEqual(const Tensor* a, const Tensor* b);
 
 template <class T>
-Tensor* tf2c_greaterequal(const Tensor* a, const Tensor* b);
+Tensor* tf2c_GreaterEqual(const Tensor* a, const Tensor* b);
 
 template <class T>
-Tensor* tf2c_matmul(const Tensor* a, const Tensor* b,
+Tensor* tf2c_MatMul(const Tensor* a, const Tensor* b,
                     int transpose_a, int transpose_b);
 
 void init();
