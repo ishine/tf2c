@@ -29,6 +29,8 @@ for op in [
         ('reshape', 2, True),
         ('minimum', 2, True),
         ('maximum', 2, True),
+        ('lessequal', 2, True),
+        ('greaterequal', 2, True),
         ('matmul', 2, False),
 ]:
     OP_MAP[op[0]] = OpType(*op)

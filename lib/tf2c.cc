@@ -293,6 +293,32 @@ Tensor* tf2c_maximum(const Tensor* a, const Tensor* b) {
 
 INSTANTIATE2(tf2c_maximum, a);
 
+template <class T>
+Tensor* tf2c_lessequal(const Tensor* a, const Tensor* b) {
+  assert(b->shape.size == 1);
+  T v = b->vec<T>(0);
+  Tensor* r = tf2c_tensor(a->type, a->shape);
+  for (uint i = 0; i < a->shape.size; i++) {
+    r->vec<T>(i) = static_cast<T>(a->vec<T>(i) <= v);
+  }
+  return r;
+}
+
+INSTANTIATE2(tf2c_lessequal, a);
+
+template <class T>
+Tensor* tf2c_greaterequal(const Tensor* a, const Tensor* b) {
+  assert(b->shape.size == 1);
+  T v = b->vec<T>(0);
+  Tensor* r = tf2c_tensor(a->type, a->shape);
+  for (uint i = 0; i < a->shape.size; i++) {
+    r->vec<T>(i) = static_cast<T>(a->vec<T>(i) >= v);
+  }
+  return r;
+}
+
+INSTANTIATE2(tf2c_greaterequal, a);
+
 #ifdef __AVX2__
 
 static bool tf2c_matmul_avx2(const Tensor* a, const Tensor* b, Tensor* r) {
