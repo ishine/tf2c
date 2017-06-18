@@ -37,10 +37,10 @@ $(MISC_O): out/misc_%.o: misc/%.cc
 	$(CXX) -c $(CXXFLAGS) $< -o $@
 
 $(MISC_EXE): out/%.exe: out/%.o out/tf2c.o
-	$(CXX) $(CXXFLAGS) $^ -o $@
+	$(CXX) $(CXXFLAGS) -lpthread $^ -o $@
 
 $(TESTS_EXE): out/%.exe: out/%.o out/main.o out/tf2c.o
-	$(CXX) $(CXXFLAGS) $^ -o $@
+	$(CXX) $(CXXFLAGS) -lpthread $^ -o $@
 
 $(TESTS_OK): out/%.ok: out/%.exe
 	$(PYTHON) runtest.py test $* && touch $@
