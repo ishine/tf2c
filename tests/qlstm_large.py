@@ -9,9 +9,9 @@ def gen_graph():
     c = tf.Variable(tf.random_normal([100, 1024]), name='c')
 
     i = tf.sigmoid(i)
-    j = tf.tanh(i)
-    f = tf.sigmoid(i)
-    o = tf.sigmoid(i)
+    j = tf.tanh(j)
+    f = tf.sigmoid(f)
+    o = tf.sigmoid(o)
     nc = tf.clip_by_value(c * f + j * i, -0.5, 0.5)
     nh = tf.multiply(nc, o, name='result')
     return nh
