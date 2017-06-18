@@ -1,3 +1,6 @@
+#ifndef TF2C_H_
+#define TF2C_H_
+
 #include <stdio.h>
 
 typedef unsigned int uint;
@@ -106,3 +109,5 @@ Tensor* tf2c_MatMul(const Tensor* a, const Tensor* b,
                     int transpose_a, int transpose_b);
 
 void init();
+
+#endif  // TF2C_H_

@@ -65,10 +65,11 @@ elif mode == 'bench':
             break
     print('%f' % (elapsed / n))
 
-elif mode == 'test':
+elif mode == 'test' or mode == 'test_misc':
     with open('out/%s.out' % name) as f:
         expected = undump_tensor(f.read())
-    output = subprocess.check_output(['out/%s.exe' % name])
+    prefix = 'misc_' if mode == 'test_misc' else ''
+    output = subprocess.check_output(['out/%s%s.exe' % (prefix, name)])
     actual = undump_tensor(output)
     if expected == actual:
         sys.exit(0)

@@ -10,9 +10,13 @@ TESTS_O := $(TESTS_OUT:out/%.out=out/%.o)
 TESTS_EXE := $(TESTS_OUT:out/%.out=out/%.exe)
 TESTS_OK := $(TESTS_OUT:out/%.out=out/%.ok)
 
+MISC_C := $(wildcard misc/*.cc)
+MISC_O := $(MISC_C:misc/%.cc=out/misc_%.o)
+MISC_EXE := $(MISC_O:out/%.o=out/%.exe)
+
 $(shell mkdir -p out)
 
-all: $(TESTS_OK)
+all: $(TESTS_OK) $(MISC_EXE)
 
 $(TESTS_OUT): out/%.out: tests/%.py runtest.py
 	$(PYTHON) runtest.py output $* > $@.tmp && mv $@.tmp $@
@@ -28,6 +32,12 @@ out/main.o: tests/main.c
 
 out/tf2c.o: lib/tf2c.cc
 	$(CXX) -c $(CXXFLAGS) $< -o $@
+
+$(MISC_O): out/misc_%.o: misc/%.cc
+	$(CXX) -c $(CXXFLAGS) $< -o $@
+
+$(MISC_EXE): out/%.exe: out/%.o out/tf2c.o
+	$(CXX) $(CXXFLAGS) $^ -o $@
 
 $(TESTS_EXE): out/%.exe: out/%.o out/main.o out/tf2c.o
 	$(CXX) $(CXXFLAGS) $^ -o $@
