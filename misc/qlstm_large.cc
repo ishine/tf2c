@@ -1,30 +1,15 @@
 #include "lib/tf2c.h"
+#include "lib/mainutil.h"
 #include "lib/thread_pool.h"
 #include "out/qlstm_large.c"
 
 #include <assert.h>
 #include <math.h>
-#include <stdio.h>
-#include <string.h>
-#include <time.h>
 
 #ifdef __AVX2__
 #include <immintrin.h>
 #include "lib/avx_mathfun.h"
 #endif
-
-static double get_time() {
-#if defined(__linux__)
-  struct timespec ts;
-  clock_gettime(CLOCK_REALTIME, &ts);
-  return ts.tv_sec + ts.tv_nsec * 0.001 * 0.001 * 0.001;
-#else
-  struct timeval tv;
-  if (gettimeofday(&tv, NULL) < 0)
-    PERROR("gettimeofday");
-  return tv.tv_sec + tv.tv_usec * 0.001 * 0.001;
-#endif
-}
 
 static inline float sigmoid(float v) {
   return 1.0 / (1.0 + exp(-v));
@@ -119,22 +104,5 @@ Tensor* qlstm() {
 
 int main(int argc, const char* argv[]) {
   init();
-  double start = get_time();
-  if (argc > 1 && !strcmp(argv[1], "--bench")) {
-    int n = 0;
-    while (1) {
-      result();
-      n++;
-      double elapsed = get_time() - start;
-      if (elapsed > 1.0) {
-        printf("%f\n", elapsed / n);
-        break;
-      }
-    }
-  } else {
-    Tensor* tensor = result();
-    double elapsed = get_time() - start;
-    dump_tensor(*tensor);
-    printf("%f\n", elapsed);
-  }
+  run(argc, argv, result);
 }

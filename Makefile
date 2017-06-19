@@ -10,6 +10,9 @@ TESTS_O := $(TESTS_OUT:out/%.out=out/%.o)
 TESTS_EXE := $(TESTS_OUT:out/%.out=out/%.exe)
 TESTS_OK := $(TESTS_OUT:out/%.out=out/%.ok)
 
+LIB_C := lib/tf2c.cc lib/mainutil.cc
+LIB_O := $(LIB_C:lib/%.cc=out/%.o)
+
 MISC_C := $(wildcard misc/*.cc)
 MISC_O := $(MISC_C:misc/%.cc=out/misc_%.o)
 MISC_EXE := $(MISC_O:out/%.o=out/%.exe)
@@ -30,16 +33,19 @@ $(TESTS_O): out/%.o: out/%.c
 out/main.o: tests/main.c
 	$(CXX) -c $(CXXFLAGS) $< -o $@
 
-out/tf2c.o: lib/tf2c.cc
+$(LIB_O): out/%.o: lib/%.cc
 	$(CXX) -c $(CXXFLAGS) $< -o $@
 
 $(MISC_O): out/misc_%.o: misc/%.cc
 	$(CXX) -c $(CXXFLAGS) $< -o $@
 
-$(MISC_EXE): out/%.exe: out/%.o out/tf2c.o
+out/libtf2c.a: $(LIB_O)
+	ar crus out/libtf2c.a $^
+
+$(MISC_EXE): out/%.exe: out/%.o out/tf2c.o out/libtf2c.a
 	$(CXX) $(CXXFLAGS) -lpthread $^ -o $@
 
-$(TESTS_EXE): out/%.exe: out/%.o out/main.o out/tf2c.o
+$(TESTS_EXE): out/%.exe: out/%.o out/main.o out/libtf2c.a
 	$(CXX) $(CXXFLAGS) -lpthread $^ -o $@
 
 $(TESTS_OK): out/%.ok: out/%.exe
