@@ -1,5 +1,6 @@
 #include "mainutil.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
@@ -9,12 +10,13 @@
 static double get_time() {
 #if defined(__linux__)
   struct timespec ts;
-  clock_gettime(CLOCK_REALTIME, &ts);
+  if (clock_gettime(CLOCK_REALTIME, &ts) < 0)
+    assert(0);
   return ts.tv_sec + ts.tv_nsec * 0.001 * 0.001 * 0.001;
 #else
   struct timeval tv;
   if (gettimeofday(&tv, NULL) < 0)
-    PERROR("gettimeofday");
+    assert(0);
   return tv.tv_sec + tv.tv_usec * 0.001 * 0.001;
 #endif
 }
