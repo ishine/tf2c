@@ -1,5 +1,5 @@
 PYTHON := python
-CXXFLAGS := -std=c++11 -g -W -Wall -MMD -MP -O3 -I. -mavx2 -mfma
+CXXFLAGS := -std=c++11 -g -W -Wall -MMD -MP -O3 -I. -mavx2 -mfma -pthread
 
 TF2C_PY := tf2c.py $(wildcard tf2c/*.py)
 
@@ -36,17 +36,17 @@ out/main.o: tests/main.c
 $(LIB_O): out/%.o: lib/%.cc
 	$(CXX) -c $(CXXFLAGS) $< -o $@
 
-$(MISC_O): out/misc_%.o: misc/%.cc
+$(MISC_O): out/misc_%.o: misc/%.cc | $(TESTS_C)
 	$(CXX) -c $(CXXFLAGS) $< -o $@
 
 out/libtf2c.a: $(LIB_O)
 	ar crus out/libtf2c.a $^
 
 $(MISC_EXE): out/%.exe: out/%.o out/tf2c.o out/libtf2c.a
-	$(CXX) $(CXXFLAGS) -lpthread $^ -o $@
+	$(CXX) $(CXXFLAGS) $^ -lpthread -o $@
 
 $(TESTS_EXE): out/%.exe: out/%.o out/main.o out/libtf2c.a
-	$(CXX) $(CXXFLAGS) -lpthread $^ -o $@
+	$(CXX) $(CXXFLAGS) $^ -lpthread -o $@
 
 $(TESTS_OK): out/%.ok: out/%.exe
 	$(PYTHON) runtest.py test $* && touch $@
