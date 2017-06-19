@@ -561,3 +561,9 @@ Tensor* tf2c_SigmoidGrad<void>(const Tensor*, const Tensor*) {
   error("TODO!");
   return nullptr;
 }
+
+template <>
+Tensor* tf2c_TanhGrad<void>(const Tensor*, const Tensor*) {
+  error("TODO!");
+  return nullptr;
+}

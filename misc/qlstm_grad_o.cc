@@ -1,4 +1,4 @@
-#include "out/qlstm_grad_i.c"
+#include "out/qlstm_grad_o.c"
 #include "misc/qlstm_grad_common.h"
 
 Tensor* qlstm_grad_i() {
@@ -8,7 +8,7 @@ Tensor* qlstm_grad_i() {
   Tensor* too;
   Tensor* toc;
   qlstm_grad(&toi, &toj, &tof, &too, &toc);
-  return toi;
+  return too;
 }
 
 int main(int argc, const char* argv[]) {

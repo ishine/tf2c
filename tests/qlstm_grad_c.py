@@ -14,7 +14,7 @@ def gen_graph():
     o = tf.sigmoid(vo)
     nc = tf.clip_by_value(vc * f + j * i, -0.5, 0.5)
     nh = tf.multiply(nc, o)
-    g = tf.gradients(nh, vi)[0]
+    g = tf.gradients(nh, vc)[0]
     return tf.identity(g, name='result')
 
 

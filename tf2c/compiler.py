@@ -33,6 +33,7 @@ for op in [
         ('GreaterEqual', 2, True),
         ('MatMul', 2, False),
         ('SigmoidGrad', 2, True),
+        ('TanhGrad', 2, True),
         ('Select', 3, True),
 ]:
     OP_MAP[op[0]] = OpType(*op)
