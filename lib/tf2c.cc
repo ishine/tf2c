@@ -549,3 +549,15 @@ Tensor* tf2c_MatMul<void>(const Tensor* a, const Tensor* b,
   else
     error("Unknown type: %d", a->type);
 }
+
+template <>
+Tensor* tf2c_Select<void>(const Tensor*, const Tensor*, const Tensor*) {
+  error("TODO!");
+  return nullptr;
+}
+
+template <>
+Tensor* tf2c_SigmoidGrad<void>(const Tensor*, const Tensor*) {
+  error("TODO!");
+  return nullptr;
+}

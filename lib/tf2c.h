@@ -108,6 +108,12 @@ template <class T>
 Tensor* tf2c_MatMul(const Tensor* a, const Tensor* b,
                     int transpose_a, int transpose_b);
 
+template <class T>
+Tensor* tf2c_Select(const Tensor* a, const Tensor* b, const Tensor* c);
+
+template <class T>
+Tensor* tf2c_SigmoidGrad(const Tensor* a, const Tensor* b);
+
 void init();
 
 #endif  // TF2C_H_

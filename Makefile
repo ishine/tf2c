@@ -6,9 +6,10 @@ TF2C_PY := tf2c.py $(wildcard tf2c/*.py)
 TESTS_PY := $(filter-out tests/__init__.py, $(wildcard tests/*.py))
 TESTS_OUT := $(TESTS_PY:tests/%.py=out/%.out)
 TESTS_C := $(TESTS_OUT:out/%.out=out/%.c)
-TESTS_O := $(TESTS_OUT:out/%.out=out/%.o)
-TESTS_EXE := $(TESTS_OUT:out/%.out=out/%.exe)
-TESTS_OK := $(TESTS_OUT:out/%.out=out/%.ok)
+TESTS_O := $(TESTS_C:out/%.c=out/%.o)
+TESTS_EXE := $(TESTS_C:out/%.c=out/%.exe)
+TESTS_OK := $(TESTS_C:out/%.c=out/%.ok)
+TESTS_OK := $(filter-out out/qlstm_grad_%.ok, $(TESTS_OK))
 
 LIB_C := lib/tf2c.cc lib/mainutil.cc
 LIB_O := $(LIB_C:lib/%.cc=out/%.o)

@@ -32,6 +32,8 @@ for op in [
         ('LessEqual', 2, True),
         ('GreaterEqual', 2, True),
         ('MatMul', 2, False),
+        ('SigmoidGrad', 2, True),
+        ('Select', 3, True),
 ]:
     OP_MAP[op[0]] = OpType(*op)
 
@@ -98,8 +100,9 @@ class Compiler(object):
             self._emit_shape(ce, value.shape)
             ce.emit_line('g_%s = tf2c_tensor(%s, shape);' %
                          (name, node.dtype.upper()))
-            assert value.shape.size
-            if value.shape.size == 1:
+            if value.shape.size == 0:
+                pass
+            elif value.shape.size == 1:
                 ce.emit_line('tf2c_fill<%s>(g_%s, %s);' %
                              (node.dtype, name, str(value.value[0])))
             else:

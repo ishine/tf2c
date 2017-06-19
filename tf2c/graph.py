@@ -43,6 +43,8 @@ class Tensor(object):
         elif tensor_def.tensor_content:
             self.value = struct.unpack('i' * self.shape.size,
                                        tensor_def.tensor_content)
+        elif not self.shape.size:
+            self.value = None
         else:
             raise RuntimeError('Unsupported tensor value: %s' % tensor_def)
 
