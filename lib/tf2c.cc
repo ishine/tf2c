@@ -243,14 +243,91 @@ Tensor* tf2c_Sigmoid(const Tensor* a) {
 
 INSTANTIATE1(tf2c_Sigmoid);
 
-template <class T>
-Tensor* tf2c_Add(const Tensor* a, const Tensor* b) {
-  check_tensor_type_eq(*a, *b);
+#ifdef __AVX2__
+
+Tensor* tf2c_Add_tile_avx(const Tensor* a, const Tensor* b) {
+#if 0
+
+  if (a->type != FLOAT && a->shape.dims[2] % 8 == 0)
+    return nullptr;
   Tensor* r = tf2c_tensor(a->type, a->shape);
-  for (uint i = 0; i < a->shape.size; i++) {
-    r->vec<T>(i) = a->vec<T>(i) + b->vec<T>(i);
+  for (uint i = 0; i < a->shape.dims[0]; i++) {
+    for (uint j = 0; j < a->shape.dims[1]; j++) {
+      for (uint k = 0; k < a->shape.dims[2]; k += 8) {
+        uint ia = (i * a->shape.dims[1] + j) * a->shape.dims[2] + k;
+        uint ib = i * a->shape.dims[2] + k;
+        __m256 av = _mm256_loadu_ps(&a->vec<float>(ia));
+        __m256 bv = _mm256_loadu_ps(&b->vec<float>(ib));
+        _mm256_storeu_ps(&r->vec<float>(ia), _mm256_add_ps(av, bv));
+      }
+    }
   }
   return r;
+
+#else
+
+  static const uint KS = 4;
+  if (a->type != FLOAT && a->shape.dims[2] % (8 * KS) == 0)
+    return nullptr;
+  Tensor* r = tf2c_tensor(a->type, a->shape);
+  for (uint i = 0; i < a->shape.dims[0]; i++) {
+    __m256 bv[KS] = {};
+    for (uint k1 = 0; k1 < a->shape.dims[2]; k1 += 8 * KS) {
+      for (uint k2 = 0; k2 < KS; k2++) {
+        uint ib = i * a->shape.dims[2] + k1 + k2 * 8;
+        bv[k2] = _mm256_loadu_ps(&b->vec<float>(ib));
+      }
+
+      for (uint j = 0; j < a->shape.dims[1]; j++) {
+        for (uint k2 = 0; k2 < KS; k2++) {
+          uint k = k1 + k2 * 8;
+          uint ia = (i * a->shape.dims[1] + j) * a->shape.dims[2] + k;
+          __m256 av = _mm256_loadu_ps(&a->vec<float>(ia));
+          _mm256_storeu_ps(&r->vec<float>(ia), _mm256_add_ps(av, bv[k2]));
+        }
+      }
+    }
+  }
+  return r;
+
+#endif
+}
+
+#endif
+
+template <class T>
+Tensor* tf2c_Add(const Tensor* a, const Tensor* b) {
+  assert(a->type == b->type);
+  assert(a->shape.num_dims == b->shape.num_dims);
+  if (a->shape.size != b->shape.size) {
+    assert(a->shape.dims[0] == b->shape.dims[0]);
+    assert(a->shape.dims[1] > b->shape.dims[1]);
+    assert(a->shape.dims[2] == b->shape.dims[2]);
+    Tensor* r = nullptr;
+#ifdef __AVX2__
+    r = tf2c_Add_tile_avx(a, b);
+    if (r)
+      return r;
+#endif
+    r = tf2c_tensor(a->type, a->shape);
+    for (uint i = 0; i < a->shape.dims[0]; i++) {
+      for (uint j = 0; j < a->shape.dims[1]; j++) {
+        for (uint k = 0; k < a->shape.dims[2]; k++) {
+          uint ia = (i * a->shape.dims[1] + j) * a->shape.dims[2] + k;
+          uint ib = i * a->shape.dims[2] + k;
+          r->vec<T>(ia) = a->vec<T>(ia) + b->vec<T>(ib);
+        }
+      }
+    }
+    return r;
+  } else {
+    check_tensor_type_eq(*a, *b);
+    Tensor* r = tf2c_tensor(a->type, a->shape);
+    for (uint i = 0; i < a->shape.size; i++) {
+      r->vec<T>(i) = a->vec<T>(i) + b->vec<T>(i);
+    }
+    return r;
+  }
 }
 
 INSTANTIATE2(tf2c_Add, a);
