@@ -51,7 +51,7 @@ static void check_tensor_type_eq(const Tensor& a, const Tensor& b) {
 
 Shape tf2c_shape(const int* dims) {
   Shape shape = tf2c_shape0();
-  for (uint i = 0; dims[i] >= 0; i++) {
+  for (uint i = 0; dims[i] >= -1; i++) {
     if (i >= MAX_DIMS)
       error("more than %d dims", MAX_DIMS);
     shape.dims[i] = dims[i];
@@ -68,7 +68,7 @@ Shape tf2c_shape_from_tensor(const Tensor* a) {
   int dims[MAX_DIMS + 1];
   for (uint i = 0; i < a->shape.size; i++)
     dims[i] = a->vec<uint>(i);
-  dims[a->shape.size] = -1;
+  dims[a->shape.size] = -2;
   return tf2c_shape(dims);
 }
 
@@ -190,7 +190,22 @@ INSTANTIATE2(tf2c_Fill, b);
 template <class T>
 Tensor* tf2c_Reshape(const Tensor* a, const Tensor* b) {
   Tensor* r = tf2c_Identity<void>(a);
-  r->shape = tf2c_shape_from_tensor(b);
+  Shape shape = tf2c_shape_from_tensor(b);
+  int minus_one_index = -1;
+  int rest_total = 1;
+  for (uint i = 0; i < shape.num_dims; i++) {
+    if (shape.dims[i] == -1) {
+      assert(minus_one_index == -1);
+      minus_one_index = i;
+    } else {
+      rest_total *= shape.dims[i];
+    }
+  }
+  if (minus_one_index >= 0) {
+    assert(a->shape.size % rest_total == 0);
+    shape.dims[minus_one_index] = a->shape.size / rest_total;
+  }
+  r->shape = shape;
   return r;
 }
 

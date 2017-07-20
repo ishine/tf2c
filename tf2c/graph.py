@@ -26,7 +26,7 @@ class Shape(object):
         self.size = reduce(lambda a, b: a * b, self.dims) if self.dims else 1
 
     def dims_str(self):
-        return ', '.join(map(str, self.dims) + ['-1'])
+        return ', '.join(map(str, self.dims) + ['-2'])
 
 
 class Tensor(object):
