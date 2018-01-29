@@ -15,6 +15,9 @@ from tensorflow.core.framework import tensor_pb2
 from tensorflow.python.framework import tensor_util
 
 
+jit_scope = tf.contrib.compiler.jit.experimental_jit_scope
+
+
 def dump_tensor(value):
     print(value.shape)
     print(list(value.flatten()))
@@ -24,11 +27,22 @@ def undump_tensor(input):
     assert len(lines) == 3
     return map(eval, lines)
 
-mode = sys.argv[1]
-name, _ = os.path.splitext(os.path.basename(sys.argv[2]))
+args = sys.argv[1:]
+
+use_jit = False
+if args[0].startswith('--'):
+    opt = args.pop(0)
+    if opt == '--jit':
+        use_jit = True
+    else:
+        raise RuntimeError('Unknown flag: %s' % opt)
+
+mode = args[0]
+name, _ = os.path.splitext(os.path.basename(args[1]))
 if mode == 'output':
     module = importlib.import_module('tests.' + name)
-    op = module.gen_graph()
+    with jit_scope(compile_ops=use_jit):
+        op = module.gen_graph()
     tf.train.write_graph(op.graph.as_graph_def(), 'out', name + '.pbtxt')
 
     sess = tf.Session()
@@ -48,12 +62,16 @@ elif mode == 'bench':
         raise RuntimeError('Run runtest.py output first')
 
     module = importlib.import_module('tests.' + name)
-    op = module.gen_graph()
+    with jit_scope(compile_ops=use_jit):
+        op = module.gen_graph()
 
     sess = tf.Session()
     if hasattr(module, 'gen_model'):
         saver = tf.train.Saver(tf.trainable_variables())
         saver.restore(sess, 'out/%s.ckpt' % name)
+
+    # Warm-up.
+    sess.run(op)
 
     start = time.time()
     n = 0
