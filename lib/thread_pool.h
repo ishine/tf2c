@@ -1,4 +1,5 @@
 #include <condition_variable>
+#include <functional>
 #include <mutex>
 #include <stack>
 #include <thread>
