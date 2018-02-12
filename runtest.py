@@ -39,7 +39,8 @@ if args[0].startswith('--'):
 
 mode = args[0]
 name, _ = os.path.splitext(os.path.basename(args[1]))
-if mode == 'output':
+
+def output():
     module = importlib.import_module('tests.' + name)
     with jit_scope(compile_ops=use_jit):
         op = module.gen_graph()
@@ -57,9 +58,12 @@ if mode == 'output':
     dump_tensor(result)
     print(elapsed)
 
+if mode == 'output':
+    output()
+
 elif mode == 'bench':
     if not os.path.exists('out/%s.pbtxt' % name):
-        raise RuntimeError('Run runtest.py output first')
+        output()
 
     module = importlib.import_module('tests.' + name)
     with jit_scope(compile_ops=use_jit):
@@ -82,6 +86,9 @@ elif mode == 'bench':
         if elapsed > 1.0:
             break
     print('%f' % (elapsed / n))
+    if hasattr(module, 'num_ops'):
+        print('%f GFLOPS' %
+              (module.num_ops() / (elapsed / n) / 1000 / 1000 / 1000))
 
 elif mode == 'test' or mode == 'test_misc':
     with open('out/%s.out' % name) as f:

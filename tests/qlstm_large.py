@@ -2,11 +2,11 @@ import tensorflow as tf
 
 
 def gen_graph():
-    i = tf.Variable(tf.random_normal([100, 1024]), name='i')
-    j = tf.Variable(tf.random_normal([100, 1024]), name='j')
-    f = tf.Variable(tf.random_normal([100, 1024]), name='f')
-    o = tf.Variable(tf.random_normal([100, 1024]), name='o')
-    c = tf.Variable(tf.random_normal([100, 1024]), name='c')
+    i = tf.Variable(tf.random_normal([500, 1024]), name='i')
+    j = tf.Variable(tf.random_normal([500, 1024]), name='j')
+    f = tf.Variable(tf.random_normal([500, 1024]), name='f')
+    o = tf.Variable(tf.random_normal([500, 1024]), name='o')
+    c = tf.Variable(tf.random_normal([500, 1024]), name='c')
 
     i = tf.sigmoid(i)
     j = tf.tanh(j)
