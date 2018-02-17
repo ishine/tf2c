@@ -8,8 +8,8 @@ def gen_graph():
     a = tf.Variable(tf.random_normal([N, N]), name='a')
     b = tf.Variable(tf.random_normal([N, N]), name='b')
     c = tf.Variable(tf.random_normal([N, N]), name='c')
-    r = tf.matmul(a, b, name='result')
-    r = tf.add(tf.matmul(a, b), c, name='result')
+    r = tf.matmul(a, b)
+    r = tf.add(r, c, name='result')
     return r
 
 

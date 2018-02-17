@@ -13,4 +13,8 @@ def gen_graph():
 
 
 def gen_model(sess):
-    sess.run(tf.global_variables_initializer())
+  sess.run(tf.global_variables_initializer())
+
+
+def num_ops():
+  return 24 * 20 * 1024 * 3

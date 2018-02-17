@@ -1,6 +1,9 @@
 #!/usr/bin/env ruby
 
-benchs = %w(matmul_large matmul_bias_large)
+benchs = %w(matmul_large matmul_bias_large atten_logits ff_large sigmoid_large tanh_large clip_large)
+if ARGV[0]
+  benchs = ARGV
+end
 
 perfs = {}
 benchs.each do |name|
@@ -17,7 +20,8 @@ N = 3
 N.times do
   benchs.each do |name|
     [false, true].each do |use_jit|
-      r = `python runtest.py bench #{name} 2> /dev/null`
+      jit = use_jit ? "--jit" : ""
+      r = `python runtest.py #{jit} bench #{name} 2> /dev/null`
       gflops = r[/(\d+\.\d+) GFLOPS/, 1]
       if !gflops
         raise "No flops: #{r}"

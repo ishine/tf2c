@@ -10,6 +10,7 @@ import subprocess
 import sys
 import time
 
+import numpy as np
 import tensorflow as tf
 from tensorflow.core.framework import tensor_pb2
 from tensorflow.python.framework import tensor_util
@@ -87,8 +88,11 @@ elif mode == 'bench':
             break
     print('%f' % (elapsed / n))
     if hasattr(module, 'num_ops'):
-        print('%f GFLOPS' %
-              (module.num_ops() / (elapsed / n) / 1000 / 1000 / 1000))
+        num_ops = module.num_ops()
+    else:
+        num_ops = reduce(lambda a,b: a*b, result.shape)
+    print('%f GFLOPS' %
+          (num_ops / (elapsed / n) / 1000 / 1000 / 1000))
 
 elif mode == 'test' or mode == 'test_misc':
     with open('out/%s.out' % name) as f:
