@@ -2,10 +2,10 @@ import tensorflow as tf
 
 
 def gen_graph():
-    i = tf.Variable(tf.random_normal([500, 1024]), name='i')
-    j = tf.Variable(tf.random_normal([500, 1024]), name='j')
-    f = tf.Variable(tf.random_normal([500, 1024]), name='f')
-    o = tf.Variable(tf.random_normal([500, 1024]), name='o')
+    x = tf.Variable(tf.random_normal([500, 1024]), name='x')
+    w = tf.Variable(tf.random_normal([1024, 4096]), name='w')
+    z = tf.matmul(x, w)
+    i, j, f, o = tf.split(z, num_or_size_splits=4, axis=1)
     c = tf.Variable(tf.random_normal([500, 1024]), name='c')
 
     i = tf.sigmoid(i)
@@ -22,4 +22,4 @@ def gen_model(sess):
 
 
 def num_ops():
-    return 500 * 1024 * 8
+    return 500 * 1024 * 4096
